@@ -2,10 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="format-detection" content="telephone=no" />
     <title>简易 3D 跑酷</title>
     <style>
       body {
@@ -13,13 +9,6 @@
         overflow: hidden;
         background-color: #87ceeb;
         font-family: Arial, sans-serif;
-        touch-action: none; /* 禁止所有触摸默认行为 */
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
       }
       #score-board {
         position: absolute;
@@ -54,7 +43,6 @@
         border: none;
         border-radius: 5px;
         margin-top: 20px;
-        touch-action: manipulation; /* 允许按钮点击，但阻止双击缩放 */
       }
       #instructions {
         position: absolute;
@@ -66,9 +54,6 @@
         text-shadow: 1px 1px 2px #000;
         pointer-events: none;
       }
-      canvas {
-        touch-action: none; /* 确保canvas元素也不响应任何默认触摸行为 */
-      }
     </style>
   </head>
   <body>
@@ -77,7 +62,7 @@
       <div>游戏结束!</div>
       <button onclick="resetGame()">重玩</button>
     </div>
-    <div id="instructions">空格键：跳跃 | A/D 或 ←/→：左右移动 | 触屏：上滑跳跃，左右滑动切换跑道</div>
+    <div id="instructions">空格键：跳跃 | A/D 或 ←/→：左右移动</div>
 
     <!-- 引入 Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -133,14 +118,6 @@
       let touchStartY = 0;
       let touchEndX = 0;
       let touchEndY = 0;
-      let isTouching = false;
-      
-      // 防止默认事件的函数
-      function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
 
       // --- 4. 创建对象函数 ---
       function createPlayer() {
@@ -228,24 +205,20 @@
             break;
         }
       });
-      
-      // 禁止浏览器默认的触摸事件行为
-      document.addEventListener('touchstart', preventDefaults, { passive: false });
-      document.addEventListener('touchmove', preventDefaults, { passive: false });
-      document.addEventListener('touchend', preventDefaults, { passive: false });
-      document.addEventListener('touchcancel', preventDefaults, { passive: false });
-      
+
       // 触屏事件处理
       document.addEventListener('touchstart', (e) => {
         if (!gameActive) return;
-        isTouching = true;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-      }, { passive: false });
+      }, false);
+      
+      document.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // 防止页面滚动
+      }, false);
       
       document.addEventListener('touchend', (e) => {
-        if (!gameActive || !isTouching) return;
-        isTouching = false;
+        if (!gameActive) return;
         
         touchEndX = e.changedTouches[0].clientX;
         touchEndY = e.changedTouches[0].clientY;
@@ -277,8 +250,8 @@
             targetX = currentLane * laneWidth;
           }
         }
-      }, { passive: false });
-
+      }, false);
+      
       // --- 7. 游戏循环 ---
       function animate() {
         requestAnimationFrame(animate);
