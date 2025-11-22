@@ -62,7 +62,7 @@
       <div>游戏结束!</div>
       <button onclick="resetGame()">重玩</button>
     </div>
-    <div id="instructions">空格键：跳跃 | A/D 或 ←/→：左右移动</div>
+    <div id="instructions">空格键：跳跃 | A/D 或 ←/→：左右移动 | 触屏：上滑跳跃，左右滑动切换跑道</div>
 
     <!-- 引入 Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -112,6 +112,12 @@
       const laneWidth = 3; // 跑道宽度
       let currentLane = 0; // -1: 左, 0: 中, 1: 右
       let targetX = 0;
+      
+      // 触屏滑动变量
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchEndX = 0;
+      let touchEndY = 0;
 
       // --- 4. 创建对象函数 ---
       function createPlayer() {
@@ -199,6 +205,52 @@
             break;
         }
       });
+      
+      // 触屏事件处理
+      document.addEventListener('touchstart', (e) => {
+        if (!gameActive) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, false);
+      
+      document.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // 防止页面滚动
+      }, false);
+      
+      document.addEventListener('touchend', (e) => {
+        if (!gameActive) return;
+        
+        touchEndX = e.changedTouches[0].clientX;
+        touchEndY = e.changedTouches[0].clientY;
+        
+        // 计算滑动距离和方向
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchStartY - touchEndY; // 注意这里的方向
+        
+        // 设置最小滑动距离阈值
+        const minSwipeDistance = 50;
+        
+        // 检测是否为上滑跳跃
+        if (diffY > minSwipeDistance && Math.abs(diffX) < diffY * 0.5) {
+          if (!isJumping && player.position.y <= 0.51) {
+            verticalVelocity = jumpStrength;
+            isJumping = true;
+          }
+        } 
+        // 检测是否为左右滑动
+        else if (Math.abs(diffX) > minSwipeDistance) {
+          // 左滑
+          if (diffX < -minSwipeDistance && currentLane > -1) {
+            currentLane--;
+            targetX = currentLane * laneWidth;
+          }
+          // 右滑
+          else if (diffX > minSwipeDistance && currentLane < 1) {
+            currentLane++;
+            targetX = currentLane * laneWidth;
+          }
+        }
+      }, false);
 
       // --- 7. 游戏循环 ---
       function animate() {
